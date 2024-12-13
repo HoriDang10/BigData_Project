@@ -15,7 +15,7 @@ spark = SparkSession.builder \
     .getOrCreate()
     
 # Preprocessing 
-tracks = spark.read.csv("/Users/Chanh/BigData/BigData_Project/BE/model/dataset.csv", header=True, inferSchema=True)
+tracks = spark.read.csv("../BE/model/dataset.csv", header=True, inferSchema=True) # Replace with your dataset's path
 tracks = tracks.dropna()
 tracks = tracks.drop("track_id")
 tracks = tracks.orderBy(col("popularity").desc())
