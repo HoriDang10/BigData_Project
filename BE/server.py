@@ -21,7 +21,8 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # Load and cache the dataset only once when the server starts
-tracks = spark.read.parquet("preprocessed_tracks.parquet")
+file_path = os.path.join(os.path.dirname(__file__), "preprocessed_tracks.parquet")
+tracks = spark.read.parquet(file_path)
 tracks.cache()  # Cache the DataFrame to keep it in memory
 print("Dataset loaded and cached.")
 
@@ -46,7 +47,6 @@ def index_get():
 
 # Route to handle song recommendations
 @app.route("/recommend", methods=["POST"])
-@limiter.limit("5 per minute")  # Limit to 5 requests per minute
 def recommend():
     song_name = request.json.get("song_name")
     if not song_name:

@@ -16,7 +16,7 @@ spark = SparkSession.builder \
     .getOrCreate()
     
 # Preprocessing 
-tracks = spark.read.parquet("../preprocessed_tracks.parquet")
+tracks = spark.read.parquet("preprocessed_tracks.parquet")
 
 # Define cosine similarity function
 def cosine_similarity_list(vec1, vec2):
