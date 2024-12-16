@@ -5,6 +5,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, lit
 from model.song import recommend_songs, tracks
 from flask_limiter import Limiter
+from pyspark.sql.functions import col, lower, trim
 
 # Initialize Flask app and other setups
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../templates'))
@@ -112,8 +113,8 @@ def recommend_based_on_playlist():
         return jsonify({"recommended_songs": recommended_songs})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Route for searching songs
+    
+# Route to search song
 @app.route("/search_song", methods=["POST"])
 def search_song():
     try:
@@ -122,9 +123,13 @@ def search_song():
         if not query:
             return jsonify({"error": "No search query provided."}), 400
 
-        # Filter songs based on the query
-        results = tracks.filter(
-            col("track_name").rlike(f".*{query}.*")
+        # Handle missing values and trim whitespace in the dataset
+        clean_tracks = tracks.filter(col("track_name").isNotNull())
+        clean_tracks = clean_tracks.withColumn("track_name", trim(col("track_name")))
+
+        # Perform a case-insensitive search
+        results = clean_tracks.filter(
+            lower(col("track_name")).like(f"%{query}%")
         ).select("track_name", "artists", "popularity").limit(10).collect()
 
         # Format results for the response
@@ -133,10 +138,14 @@ def search_song():
             for row in results
         ]
 
+        if not songs:
+            return jsonify({"error": "No matching songs found."}), 404
+
         return jsonify({"songs": songs})
     except Exception as e:
+        print(f"Error during search: {e}")
         return jsonify({"error": str(e)}), 500
-
+    
 # Route to load songs for the homepage
 @app.route("/load_songs", methods=["GET"])
 def load_songs():
