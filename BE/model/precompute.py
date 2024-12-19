@@ -5,16 +5,22 @@ from pyspark.ml.feature import CountVectorizer, VectorAssembler, Tokenizer
 from pyspark.ml.linalg import DenseVector, SparseVector
 from pyspark.sql.types import ArrayType, DoubleType
 import numpy as np
+import os
 from pyspark.sql import functions as F
+
+os.environ["PYSPARK_PYTHON"] = "/Users/dangmai/BigData_Project/venv/bin/python"
+os.environ["PYSPARK_DRIVER_PYTHON"] = "/Users/dangmai/BigData_Project/venv/bin/python"
+os.environ["PYTHONPATH"] = "/Users/dangmai/BigData_Project/BE"
 
 # Start a Spark session
 spark = SparkSession.builder \
-    .appName("PreprocessSongData") \
+    .appName("SongRecommendation") \
     .config("spark.driver.bindAddress", "127.0.0.1") \
     .config("spark.driver.host", "localhost") \
     .config("spark.driver.port", "4041") \
+    .config("spark.executorEnv.PYSPARK_PYTHON", "/Users/dangmai/BigData_Project/venv/bin/python") \
+    .config("spark.executorEnv.PYSPARK_DRIVER_PYTHON", "/Users/dangmai/BigData_Project/venv/bin/python") \
     .getOrCreate()
-    
 # Preprocessing 
 tracks = spark.read.csv("dataset.csv", header=True, inferSchema=True)
 tracks = tracks.dropna()
