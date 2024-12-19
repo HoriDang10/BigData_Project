@@ -8,6 +8,7 @@ from pyspark.sql.types import ArrayType, DoubleType
 import numpy as np
 from pyspark.sql import functions as F
 
+
 # Start a Spark session
 spark = SparkSession.builder \
     .appName("SongRecommendation") \
@@ -20,16 +21,31 @@ spark = SparkSession.builder \
 tracks = spark.read.parquet("preprocessed_tracks.parquet")
 
 # Define cosine similarity function
-def cosine_similarity_list(vec1, vec2):
+def cosine_similarity_list(vec1, vec2): #check this 
+    # Ensure vectors are Dense Arrays
+    if isinstance(vec1, SparseVector):
+        vec1 = vec1.toArray()
+    elif isinstance(vec1, DenseVector):
+        vec1 = np.array(vec1)
+
+    if isinstance(vec2, SparseVector):
+        vec2 = vec2.toArray()
+    elif isinstance(vec2, DenseVector):
+        vec2 = np.array(vec2)
+
+    # If vectors are still not lists/arrays, handle gracefully
     vec1 = np.array(vec1, dtype=float)
     vec2 = np.array(vec2, dtype=float)
-    dot_product = float(np.dot(vec1, vec2))
-    norm1 = float(np.linalg.norm(vec1))
-    norm2 = float(np.linalg.norm(vec2))
-    return dot_product / (norm1 * norm2)
 
+    # Compute cosine similarity with zero norm handling
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    if norm1 == 0 or norm2 == 0:
+        return 0.0  # Avoid division by zero
 
-cosine_similarity_udf = udf(cosine_similarity_list, DoubleType())
+    return float(np.dot(vec1, vec2) / (norm1 * norm2))
+
+    cosine_similarity_udf = udf(cosine_similarity_list, DoubleType()) # check this 
 
 # Recommend function
 def recommend_songs(song_name):

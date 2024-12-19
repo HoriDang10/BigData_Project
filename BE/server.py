@@ -2,11 +2,13 @@ from flask import Flask, render_template, request, jsonify
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit
-from model.song import recommend_songs, tracks
+from pyspark.sql.functions import col, lit, udf
+from model.song import recommend_songs, tracks,cosine_similarity_list
 from flask_limiter import Limiter
 from pyspark.sql.functions import col, lower, trim
+from pyspark.sql.types import ArrayType, DoubleType
 
+cosine_similarity_udf = udf(cosine_similarity_list, DoubleType()) 
 # Initialize Flask app and other setups
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../templates'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../static'))
