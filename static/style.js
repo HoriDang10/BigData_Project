@@ -1,45 +1,9 @@
 // DOM Elements
 const searchInput = document.getElementById("songSearch");
 const searchResults = document.getElementById("searchResults");
-const likedSongs = document.getElementById("likedSongs");
-const recommendedSongs = document.getElementById("recommendedSongs");
-const reloadRecommendationsBtn = document.getElementById("reloadRecommendationsBtn");
-
-// Fetch Initial Recommendations (Top 10 Most Popular Songs)
-function fetchInitialRecommendations() {
-  recommendedSongs.innerHTML = "<li>Loading...</li>"; // Show loading indicator
-
-  fetch("/recommend_initial")
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.error) {
-        recommendedSongs.innerHTML = `<li>${data.error}</li>`;
-        return;
-      }
-
-      // Display recommended songs
-      const recommendations = data.recommended_songs || [];
-      if (recommendations.length === 0) {
-        recommendedSongs.innerHTML = "<li>No recommendations available.</li>";
-        return;
-      }
-
-      recommendedSongs.innerHTML = ""; // Clear previous recommendations
-      recommendations.forEach((song) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${song.title}</span>
-          <span>${song.artist}</span>
-          <span>Popularity: ${song.popularity}</span>
-        `;
-        recommendedSongs.appendChild(li);
-      });
-    })
-    .catch((error) => {
-      console.error("Error fetching initial recommendations:", error);
-      recommendedSongs.innerHTML = "<li>Error loading recommendations.</li>";
-    });
-}
+const selectedSongInput = document.getElementById("selectedSong");
+const generatePlaylistBtn = document.getElementById("generatePlaylistBtn");
+const generatedPlaylist = document.getElementById("generatedPlaylist");
 
 // Search for Songs Dynamically
 function searchSongs() {
@@ -50,7 +14,7 @@ function searchSongs() {
     return;
   }
 
-  searchResults.innerHTML = "<li>Loading...</li>"; // Show loading indicator
+  searchResults.innerHTML = "<li>Loading...</li>";
 
   fetch("/search_song", {
     method: "POST",
@@ -70,19 +34,11 @@ function searchSongs() {
         return;
       }
 
-      // Render the search results
-      searchResults.innerHTML = ""; // Clear previous results
+      searchResults.innerHTML = "";
       results.forEach((song) => {
         const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${song.title}</span>
-          <span>${song.artist}</span>
-          <span>Popularity: ${song.popularity}</span>
-          <button class="like-btn">
-            <img src="https://img.icons8.com/ios/20/000000/like--v1.png" alt="Like">
-          </button>
-        `;
-        li.querySelector(".like-btn").addEventListener("click", () => addToPlaylist(song));
+        li.textContent = `${song.title} - ${song.artist}`;
+        li.addEventListener("click", () => selectSong(song));
         searchResults.appendChild(li);
       });
     })
@@ -92,68 +48,53 @@ function searchSongs() {
     });
 }
 
-// Add Song to Playlist
-function addToPlaylist(song) {
-  const li = document.createElement("li");
-  li.innerHTML = `
-    <span>${song.title}</span>
-    <span>${song.artist}</span>
-    <span>Popularity: ${song.popularity}</span>
-  `;
-  likedSongs.appendChild(li);
+// Select a Song from Search Results
+function selectSong(song) {
+  selectedSongInput.value = `${song.title} - ${song.artist}`;
 }
 
-// Fetch Recommendations Based on Playlist
-function fetchRecommendations() {
-  const playlistSongs = [...likedSongs.querySelectorAll("li")].map((li) => {
-    const title = li.querySelector("span:nth-child(1)").textContent;
-    const artist = li.querySelector("span:nth-child(2)").textContent;
-    return { title, artist };
-  });
+// Generate Playlist Based on Selected Song
+function generatePlaylist() {
+  const selectedSong = selectedSongInput.value.trim();
 
-  if (playlistSongs.length === 0) {
-    fetchInitialRecommendations();
+  if (!selectedSong) {
+    generatedPlaylist.innerHTML = "<li>Please paste a song to generate a playlist.</li>";
     return;
   }
 
-  fetch("/recommend_based_on_playlist", {
+  generatedPlaylist.innerHTML = "<li>Loading...</li>";
+
+  fetch("/generate_playlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ playlist: playlistSongs }),
+    body: JSON.stringify({ song: selectedSong }),
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
-        recommendedSongs.innerHTML = `<li>${data.error}</li>`;
+        generatedPlaylist.innerHTML = `<li>${data.error}</li>`;
         return;
       }
 
-      const recommendations = data.recommended_songs || [];
-      if (recommendations.length === 0) {
-        recommendedSongs.innerHTML = "<li>No recommendations available.</li>";
+      const playlist = data.playlist || [];
+      if (playlist.length === 0) {
+        generatedPlaylist.innerHTML = "<li>No songs found for this playlist.</li>";
         return;
       }
 
-      recommendedSongs.innerHTML = "";
-      recommendations.forEach((song) => {
+      generatedPlaylist.innerHTML = "";
+      playlist.forEach((song) => {
         const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${song.title}</span>
-          <span>${song.artist}</span>
-          <span>Popularity: ${song.popularity}</span>
-        `;
-        recommendedSongs.appendChild(li);
+        li.textContent = `${song.title} - ${song.artist}`;
+        generatedPlaylist.appendChild(li);
       });
     })
     .catch((error) => {
-      console.error("Error fetching recommendations:", error);
-      recommendedSongs.innerHTML = "<li>Error loading recommendations.</li>";
+      console.error("Error generating playlist:", error);
+      generatedPlaylist.innerHTML = "<li>Error generating playlist.</li>";
     });
 }
 
 // Event Listeners
 document.getElementById("searchBtn").addEventListener("click", searchSongs);
-reloadRecommendationsBtn.addEventListener("click", fetchRecommendations);
-
-// Initialize the App
-window.onload = fetchInitialRecommendations;
+generatePlaylistBtn.addEventListener("click", generatePlaylist);
