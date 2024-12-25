@@ -4,6 +4,7 @@
   box-sizing: border-box;
 }
 
+
 body {
   font-family: 'Montserrat', sans-serif;
   background-color: black;
@@ -12,8 +13,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; 
+  height: 100vh;
 }
+
 
 /* Container */
 .container {
@@ -23,11 +25,13 @@ body {
   animation: fadeIn 1s ease-in-out; /* Entrance animation */
 }
 
+
 /* Header */
 header {
   text-align: center;
   margin-bottom: 20px;
 }
+
 
 header h1 {
   font-size: 3rem;
@@ -38,12 +42,14 @@ header h1 {
   animation: slideInDown 1s ease-in-out; /* Header slide-in */
 }
 
+
 header p {
   font-size: 1.1rem;
   color: #d9f0fa;
   opacity: 0;
   animation: fadeIn 1.5s ease-in-out 0.5s forwards; /* Fades in */
 }
+
 
 /* Content Section */
 .content {
@@ -54,6 +60,7 @@ header p {
   width: 100%;
   max-width: 1000px;
 }
+
 
 /* Left and Right Sections - Shared Styles */
 .left-section, .right-section {
@@ -69,11 +76,14 @@ header p {
 }
 
 
+
+
 /* Custom Scrollbar (Webkit browsers like Chrome, Edge, Safari) */
 .left-section::-webkit-scrollbar,
 .right-section::-webkit-scrollbar {
   width: 8px; /* Width of the scrollbar */
 }
+
 
 .left-section::-webkit-scrollbar-track,
 .right-section::-webkit-scrollbar-track {
@@ -81,16 +91,19 @@ header p {
   border-radius: 10px;
 }
 
+
 .left-section::-webkit-scrollbar-thumb,
 .right-section::-webkit-scrollbar-thumb {
   background: #054dff; /* Blue scrollbar thumb */
   border-radius: 10px;
 }
 
+
 .left-section::-webkit-scrollbar-thumb:hover,
 .right-section::-webkit-scrollbar-thumb:hover {
   background: #003bb1; /* Darker blue on hover */
 }
+
 
 /* Hover effect on cards */
 .left-section:hover, .right-section:hover {
@@ -105,6 +118,7 @@ header p {
   gap: 10px;
 }
 
+
 .search-bar input {
   flex: 1;
   padding: 10px;
@@ -115,9 +129,11 @@ header p {
   transition: border-color 0.3s ease;
 }
 
+
 .search-bar input:focus {
   border-color: #054dff;
 }
+
 
 .search-bar button {
   background-color: transparent;
@@ -126,19 +142,23 @@ header p {
   transition: transform 0.2s ease;
 }
 
+
 .search-bar button:hover {
   transform: scale(1.2);
 }
+
 
 .search-bar button img {
   width: 20px;
   height: 20px;
 }
 
+
 /* List Items */
 ul {
   list-style: none;
 }
+
 
 ul li {
   display: flex;
@@ -153,20 +173,24 @@ ul li {
   transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
+
 ul li:hover {
   transform: translateX(10px);
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
   background-color: #e3f2fd;
 }
 
+
 ul li img {
   cursor: pointer;
   transition: transform 0.2s ease;
 }
 
+
 ul li img:hover {
   transform: rotate(20deg);
 }
+
 
 /* Keyframes for Animations */
 @keyframes fadeIn {
@@ -177,6 +201,7 @@ ul li img:hover {
     opacity: 1;
   }
 }
+
 
 @keyframes slideInDown {
   from {
@@ -189,12 +214,14 @@ ul li img:hover {
   }
 }
 
+
 /* Container for Centering the Button */
 .button-container {
   display: flex; /* Flexbox for alignment */
   justify-content: center; /* Center horizontally */
   margin-top: 20px; /* Adds spacing from content above */
 }
+
 
 /* Reload Recommendations Button */
 #reloadRecommendationsBtn {
@@ -212,6 +239,7 @@ ul li img:hover {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+
 /* Hover Effect */
 #reloadRecommendationsBtn:hover {
   background-color: #003bb1; /* Darker blue on hover */
@@ -219,8 +247,112 @@ ul li img:hover {
   box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
 }
 
+
 /* Active Effect */
 #reloadRecommendationsBtn:active {
   transform: scale(0.95); /* Shrink effect on click */
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+
+.right-section h3 {
+  font-size: 1.5rem;
+  color: #054dff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+
+#songPaste {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+
+#songPaste:focus {
+  border-color: #054dff;
+}
+
+
+#generatePlaylistBtn {
+  background-color: #054dff;
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+#generatePlaylistBtn:hover {
+  background-color: #003bb1;
+  transform: scale(1.05);
+  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+#generatePlaylistBtn:active {
+  transform: scale(0.95);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+
+ul {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+}
+
+
+ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+
+ul li:hover {
+  transform: translateX(10px);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  background-color: #e3f2fd;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
