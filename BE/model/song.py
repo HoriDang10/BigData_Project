@@ -4,6 +4,16 @@ from pyspark.sql.types import ArrayType, DoubleType
 from pyspark.ml.linalg import DenseVector
 import numpy as np
 
+spark = SparkSession.builder \
+    .appName("PreprocessSongData") \
+    .config("spark.driver.bindAddress", "127.0.0.1") \
+    .config("spark.driver.host", "localhost") \
+    .config("spark.driver.port", "4041") \
+    .getOrCreate()
+    
+tracks = spark.read.parquet("preprocessed_tracks.parquet")
+tracks = tracks.dropna()
+
 # Define cosine similarity function
 def cosine_similarity(vec1, vec2):
     if not vec1 or not vec2:  # Check for None or empty vectors
