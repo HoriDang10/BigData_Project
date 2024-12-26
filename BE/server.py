@@ -1,138 +1,70 @@
 from flask import Flask, render_template, request, jsonify
 import os
-from concurrent.futures import ThreadPoolExecutor
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit
-from model.song import recommend_songs, tracks
-from flask_limiter import Limiter
 from pyspark.sql.functions import col, lower, trim
+from pyspark.sql import functions as F
+from model.song import recommend_songs  # Import recommendation logic
 
-# Initialize Flask app and other setups
+# Initialize Flask app
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../templates'))
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../static'))
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
-# Initialize Spark session globally (reuse it across requests)
+# Start a Spark session
 spark = SparkSession.builder \
     .appName("Song Recommender") \
+    .config("spark.driver.memory", "2g") \
     .config("spark.driver.bindAddress", "127.0.0.1") \
     .config("spark.driver.host", "localhost") \
     .config("spark.driver.port", "4041") \
+    .config("spark.ui.port", "4042") \
     .getOrCreate()
 
-# Load and cache the dataset only once when the server starts
+# Load preprocessed dataset
 file_path = os.path.join(os.path.dirname(__file__), "preprocessed_tracks.parquet")
+# Normalize the dataset columns
 tracks = spark.read.parquet(file_path)
-tracks.cache()  # Cache the DataFrame to keep it in memory
+# Apply normalization to the dataset
+tracks = tracks.withColumn("track_name", lower(trim(col("track_name"))))
+tracks = tracks.withColumn("track_name", F.regexp_replace(col("track_name"), r"–", "-"))
+tracks = tracks.withColumn("track_name", F.regexp_replace(col("track_name"), r"&", "and"))
+tracks = tracks.withColumn("artists", lower(trim(col("artists"))))
+tracks = tracks.withColumn("artists", F.regexp_replace(col("artists"), r"–", "-"))
+tracks = tracks.withColumn("artists", F.regexp_replace(col("artists"), r"&", "and"))
+
+tracks.cache()
+
 print("Dataset loaded and cached.")
 
-# Create a thread pool executor for background tasks
-executor = ThreadPoolExecutor(max_workers=4)  # Limit number of background threads
-
-# Initialize Flask limiter for rate limiting
-limiter = Limiter(app)
-
-# Function to handle heavy recommendation processing in background
-def recommend_async(song_name, callback):
-    try:
-        recommended_songs = recommend_songs(song_name)  # Recommendation logic
-        callback({"recommendations": recommended_songs})
-    except Exception as e:
-        callback({"error": str(e)})
+def normalize_song_name(song_name):
+    if song_name:
+        song_name = song_name.strip().lower()
+        song_name = song_name.replace("–", "-").replace("&", "and")
+        song_name = song_name.replace(";", "").replace("(", "").replace(")", "")
+        song_name = " ".join(song_name.split())  # Remove extra spaces
+    return song_name
 
 # Default route to render the homepage
 @app.route("/")
-def index_get():
+def index():
     return render_template("index.html")
 
-# Route to handle song recommendations
-@app.route("/recommend", methods=["POST"])
-def recommend():
-    song_name = request.json.get("song_name")
-    if not song_name:
-        return jsonify({"error": "Please provide a song name."}), 400
-
-    # Start recommendation task in the background
-    def send_recommendations(response):
-        return jsonify(response)
-
-    # Use background thread for heavy processing
-    executor.submit(recommend_async, song_name, send_recommendations)
-    return jsonify({"message": "Recommendation in progress..."})
-
-# Route for recommending songs based on popularity
-@app.route("/recommend_initial", methods=["GET"])
-def recommend_initial():
-    try:
-        # Fetch the top 10 most popular songs
-        popular_songs = tracks.orderBy(col("popularity").desc()).limit(10).collect()
-        recommended_songs = [
-            {"title": row["track_name"], "artist": row["artists"], "popularity": row["popularity"]}
-            for row in popular_songs
-        ]
-        return jsonify({"recommended_songs": recommended_songs})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Route for recommending songs based on a playlist
-@app.route("/recommend_based_on_playlist", methods=["POST"])
-def recommend_based_on_playlist():
-    try:
-        # Get the playlist from the request
-        playlist = request.json.get("playlist", [])
-        if not playlist:
-            return jsonify({"error": "Your playlist is empty."}), 400
-
-        # Convert playlist into a list of song names
-        song_names = [song["title"] for song in playlist]
-
-        # Filter tracks in the playlist (optimized with limit to avoid excessive memory use)
-        playlist_tracks = tracks.filter(col("track_name").isin(song_names)).limit(100)
-
-        if playlist_tracks.count() == 0:
-            return jsonify({"error": "No matching tracks found in the dataset."}), 400
-
-        # Get features of the playlist songs
-        playlist_features = playlist_tracks.select("features").collect()
-
-        # Aggregate features for recommendations (e.g., cosine similarity, popularity, etc.)
-        recommendations = tracks.withColumn(
-            "similarity", cosine_similarity_udf(
-                lit(playlist_features[0]["features"]), col("features")
-            )
-        ).filter(~col("track_name").isin(song_names))\
-          .orderBy(col("similarity").desc(), col("popularity").desc()).limit(10)
-
-        # Prepare recommendations for the response
-        recommended_songs = [
-            {"title": row["track_name"], "artist": row["artists"], "popularity": row["popularity"]}
-            for row in recommendations.collect()
-        ]
-
-        return jsonify({"recommended_songs": recommended_songs})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-# Route to search song
+# Route to search for songs
 @app.route("/search_song", methods=["POST"])
 def search_song():
     try:
-        # Get the search query from the request
-        query = request.json.get("query", "").strip().lower()
-        if not query:
-            return jsonify({"error": "No search query provided."}), 400
+        query = request.json.get("query", "").strip()
+        query = normalize_song_name(query)  # Normalize the query
+        print(f"Search query received: '{query}'")
 
-        # Handle missing values and trim whitespace in the dataset
-        clean_tracks = tracks.filter(col("track_name").isNotNull())
-        clean_tracks = clean_tracks.withColumn("track_name", trim(col("track_name")))
-
-        # Perform a case-insensitive search
-        results = clean_tracks.filter(
+        # Case-insensitive matching with normalized query
+        results = tracks.filter(
             lower(col("track_name")).like(f"%{query}%")
         ).select("track_name", "artists", "popularity").limit(10).collect()
 
-        # Format results for the response
+        print(f"Search results: {[row.track_name for row in results]}")
+
         songs = [
             {"title": row["track_name"], "artist": row["artists"], "popularity": row["popularity"]}
             for row in results
@@ -145,18 +77,58 @@ def search_song():
     except Exception as e:
         print(f"Error during search: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+
+def normalize_song_name(song_name):
+    """
+    Normalize the song name to match the preprocessing format in the dataset.
+    """
+    if song_name:
+        song_name = song_name.strip().lower()  # Lowercase and remove surrounding spaces
+        song_name = song_name.replace("–", "-").replace("&", "and")  # Replace special characters
+        song_name = song_name.replace(";", "").replace("(", "").replace(")", "")  # Remove unwanted symbols
+        song_name = " ".join(song_name.split())  # Remove extra spaces
+    return song_name
     
-# Route to load songs for the homepage
-@app.route("/load_songs", methods=["GET"])
-def load_songs():
+# Route to generate playlist
+@app.route("/generate_playlist", methods=["POST"])
+def generate_playlist():
     try:
-        # Fetch a subset of relevant columns to send to the frontend
-        song_list = tracks.select("track_name", "artists", "popularity").limit(100).collect()
-        songs = [
+        # Receive and normalize song_name
+        raw_song_name = request.json.get("song", "")
+        print(f"Raw song name received from frontend: {raw_song_name}")
+
+        if not raw_song_name:
+            return jsonify({"error": "Please provide a song name."}), 400
+
+        # Normalize input song_name
+        song_name = normalize_song_name(raw_song_name)
+        print(f"Normalized song_name for recommendation: '{song_name}'")
+
+        # Call the recommendation model
+        recommended_songs = recommend_songs(song_name)
+        print(f"Recommended songs from model: {recommended_songs}")
+
+        if not recommended_songs:
+            return jsonify({"error": "No songs found for this playlist."}), 404
+
+        return jsonify({"playlist": recommended_songs})
+    except Exception as e:
+        print(f"Error in /generate_playlist: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Route to get popular songs (optional)
+@app.route("/recommend_initial", methods=["GET"])
+def recommend_initial():
+    try:
+        # Fetch the top 10 most popular songs
+        popular_songs = tracks.orderBy(col("popularity").desc()).limit(10).collect()
+        recommended_songs = [
             {"title": row["track_name"], "artist": row["artists"], "popularity": row["popularity"]}
-            for row in song_list
+            for row in popular_songs
         ]
-        return jsonify({"songs": songs})
+        return jsonify({"recommended_songs": recommended_songs})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

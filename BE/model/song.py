@@ -33,40 +33,47 @@ cosine_similarity_udf = udf(cosine_similarity_list, DoubleType())
 
 # Recommend function
 def recommend_songs(song_name):
-    global tracks  
-    input_song = tracks.filter(col("track_name") == song_name).select("features_list", "artists").collect()
+    global tracks
+    try:
+        print(f"Normalized song_name: '{song_name}'")
+        print("Dataset preview (normalized):")
+        tracks.select("track_name", "artists").show(10, truncate=False)
 
-    if not input_song:
-        print("This song is either not so popular or you entered an invalid name.\nSome songs you may like:")
-        tracks.select("track_name").orderBy(col("popularity").desc()).show(5)
-        return
+        # Check for an exact match
+        input_song = tracks.filter(col("track_name") == song_name).select("features_list", "artists").collect()
+        if not input_song:
+            print(f"Exact match not found for: {song_name}")
 
-    input_features = input_song[0]["features_list"]
-    input_artist = input_song[0]["artists"]
+            # Fallback to partial match
+            input_song = tracks.filter(col("track_name").like(f"%{song_name}%")).select("features_list", "artists").collect()
+            if not input_song:
+                print(f"Partial match not found for: {song_name}")
+                return []
 
-    artist_tracks = tracks.filter(col("artists") == input_artist)
+        # Process input song if found
+        input_features = input_song[0]["features_list"]
+        print(f"Input features: {input_features}")
 
-   
-    if artist_tracks.count() == 0:
-        print(f"No other songs by {input_artist} found, recommending based on features.")
-        artist_tracks = tracks  
+        # Calculate similarity
+        tracks_with_similarity = tracks.withColumn(
+            "similarity", cosine_similarity_udf(lit(input_features), col("features_list"))
+        )
 
-    
-    tracks_with_similarity = tracks.withColumn(
-        "similarity", cosine_similarity_udf(lit(input_features), col("features_list"))
-    )
+        recommendations = tracks_with_similarity.filter(
+            col("track_name") != song_name
+        ).orderBy(
+            col("similarity").desc(),
+            col("popularity").desc()
+        ).select("track_name", "artists", "similarity").limit(10).collect()
 
-    
-    recommendations = tracks_with_similarity.filter(
-        col("track_name") != song_name  
-    ).orderBy(
-        (col("artists") == input_artist).desc(),  
-        col("similarity").desc(),  
-        col("popularity").desc()  
-    )
+        print("Final recommendations:")
+        for row in recommendations:
+            print(f"Track: {row.track_name}, Artist: {row.artists}, Similarity: {row.similarity}")
 
-    
-    recommendations.select("track_name", "artists").show(10)
+        return [{"title": row.track_name, "artist": row.artists} for row in recommendations]
+    except Exception as e:
+        print(f"Error in recommend_songs: {e}")
+        return []
 
 # Recommend songs based on popularity
 def recommend_songs_by_popularity():
