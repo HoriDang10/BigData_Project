@@ -9,6 +9,8 @@ const generatedPlaylist = document.getElementById("generatedPlaylist");
 function searchSongs() {
   const query = searchInput.value.trim();
 
+  console.log("Search query being sent:", query); // Debugging log
+
   if (!query) {
     searchResults.innerHTML = "<li>Please enter a search term.</li>";
     return;
@@ -23,6 +25,8 @@ function searchSongs() {
   })
     .then((response) => response.json())
     .then((data) => {
+      console.log("Search results received:", data); // Debugging log
+
       if (data.error) {
         searchResults.innerHTML = `<li>${data.error}</li>`;
         return;
@@ -50,7 +54,8 @@ function searchSongs() {
 
 // Select a Song from Search Results
 function selectSong(song) {
-  selectedSongInput.value = `${song.title} - ${song.artist}`;
+  console.log("Selected song:", song); // Debug the selected song
+  selectedSongInput.value = `${song.title} - ${song.artist}`; // Ensure the title and artist are correctly combined
 }
 
 // Generate Playlist Based on Selected Song
@@ -58,7 +63,7 @@ function generatePlaylist() {
   const selectedSong = selectedSongInput.value.trim();
 
   if (!selectedSong) {
-    generatedPlaylist.innerHTML = "<li>Please paste a song to generate a playlist.</li>";
+    generatedPlaylist.innerHTML = "<li>Please provide a song name.</li>";
     return;
   }
 
@@ -67,11 +72,12 @@ function generatePlaylist() {
   fetch("/generate_playlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ song: selectedSong }),
+    body: JSON.stringify({ song: selectedSong }), // Send the original casing
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
+        console.error("Error from server:", data.error);
         generatedPlaylist.innerHTML = `<li>${data.error}</li>`;
         return;
       }
