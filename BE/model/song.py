@@ -58,3 +58,10 @@ def recommend_songs(song_name, tracks):
     except Exception as e:
         print(f"Error in recommend_songs: {e}")
         return []
+
+
+# Recommend songs based on popularity
+def recommend_songs_by_popularity():
+    popular_tracks = tracks.orderBy(col("popularity").desc())
+    
+    popular_tracks.select("track_name", "artists").show(10)
