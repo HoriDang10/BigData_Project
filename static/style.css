@@ -1,141 +1,357 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: black;
+  color: #333;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+
+/* Container */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  background-color: transparent;
+  animation: fadeIn 1s ease-in-out; /* Entrance animation */
+}
+
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size: 3rem;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  color: #054dff;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: float 3s ease-in-out infinite;
+}
+
+header p {
+  font-size: 1.1rem;
+  color: #d9f0fa;
+  opacity: 0;
+  animation: fadeIn 1.5s ease-in-out 0.5s forwards;
+}
+
+/* Content Section */
+.content {
+  display: flex;
+  justify-content: space-between;
+  gap: 50px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1000px;
+}
+
+
+/* Left and Right Sections - Shared Styles */
+.left-section, .right-section {
+  width: 400px;
+  height: 500px; /* Fixed height */
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow-y: auto; /* Enable vertical scroll if content overflows */
+  scrollbar-width: thin; /* Optional: Firefox thin scrollbar */
+}
+
+
+
+
+/* Custom Scrollbar (Webkit browsers like Chrome, Edge, Safari) */
+.left-section::-webkit-scrollbar,
+.right-section::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+
+.left-section::-webkit-scrollbar-track,
+.right-section::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light grey track */
+  border-radius: 10px;
+}
+
+
+.left-section::-webkit-scrollbar-thumb,
+.right-section::-webkit-scrollbar-thumb {
+  background: #054dff; /* Blue scrollbar thumb */
+  border-radius: 10px;
+}
+
+
+.left-section::-webkit-scrollbar-thumb:hover,
+.right-section::-webkit-scrollbar-thumb:hover {
+  background: #003bb1; /* Darker blue on hover */
+}
+
+
+/* Hover effect on cards */
+.left-section:hover, .right-section:hover {
+  transform: translateY(-10px);
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.2);
+}
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+
+.search-bar input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+
+.search-bar input:focus {
+  border-color: #054dff;
+}
+
+
+.search-bar button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+
+.search-bar button:hover {
+  transform: scale(1.2);
+}
+
+
+.search-bar button img {
+  width: 20px;
+  height: 20px;
+}
+
+
+/* List Items */
+ul {
+  list-style: none;
+}
+
+
+ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+
+ul li:hover {
+  transform: translateX(10px);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  background-color: #e3f2fd;
+}
+
+
+ul li img {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+
+ul li img:hover {
+  transform: rotate(20deg);
+}
+
+
+/* Keyframes for Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
   }
-  
-  body {
-    font-family: 'Montserrat', sans-serif; 
-    background-color: #a8f0c6; 
-    color: #333;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 90vh; 
+  50% {
+    transform: translateY(-10px);
   }
-  
-  .container {
-    width: 90%;
-    max-width: 1200px;
-    background-color: transparent;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  
-  /* Header */
-  header {
-    text-align: center;
-    margin-bottom: 20px;
+  to {
+    opacity: 1;
   }
-  
-  header h1 {
-    font-size: 3rem;
-    font-family: "Poppins", sans-serif;
-    font-weight: 700;
-    font-style: normal;  
-    color: #054dff; /* Blue text for header */
-  }
-  
-  header p {
-    font-size: 1.1rem;
-    color: #555;
-  }
-  
-  /* Content Section */
-  .content {
-    display: flex;
-    justify-content: space-between;
-    gap: 50px; /* Space between left and right sections */
-    align-items: flex-start;
-    width: 100%;
-    max-width: 1000px;
-  }
-  
-  /* Left Section */
-  .left-section {
-    width: 400px; /* Fixed width */
-    height: 500px; /* Fixed height */
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .search-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    gap: 10px;
-  }
-  
-  .search-bar input {
-    flex: 1;
-    padding: 10px;
-    border: 2px solid #ddd;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    outline: none;
-  }
-  
-  .search-bar button {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .search-bar button img {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .song-list h3,
-  .playlist h3 {
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-    color: #333;
-  }
-  
-  ul {
-    list-style: none;
-  }
-  
-  ul li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    margin-bottom: 10px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-    font-size: 0.9rem;
-  }
-  
-  ul li img {
-    cursor: pointer;
-  }
-  
-  /* Right Section */
-  .right-section {
-    width: 400px;
-    height: 500px; 
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .right-section h3 {
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 20px;
-  }
-  
-  .right-section ul li {
-    font-size: 0.9rem;
-    padding: 10px 15px;
-    margin-bottom: 10px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
+}
+
+/* Container for Centering the Button */
+.button-container {
+  display: flex; /* Flexbox for alignment */
+  justify-content: center; /* Center horizontally */
+  margin-top: 20px; /* Adds spacing from content above */
+}
+
+
+/* Reload Recommendations Button */
+#reloadRecommendationsBtn {
+  background-color: #054dff; /* Primary blue color */
+  color: #fff; /* White text */
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px; /* Rounded edges */
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Hover Effect */
+#reloadRecommendationsBtn:hover {
+  background-color: #003bb1; /* Darker blue on hover */
+  transform: scale(1.05); /* Slight zoom effect */
+  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Active Effect */
+#reloadRecommendationsBtn:active {
+  transform: scale(0.95); /* Shrink effect on click */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+
+.right-section h3 {
+  font-size: 1.5rem;
+  color: #054dff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+
+#songPaste {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+
+#songPaste:focus {
+  border-color: #054dff;
+}
+
+
+#generatePlaylistBtn {
+  background-color: #054dff;
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+#generatePlaylistBtn:hover {
+  background-color: #003bb1;
+  transform: scale(1.05);
+  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+#generatePlaylistBtn:active {
+  transform: scale(0.95);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+
+ul {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+}
+
+#selectedSong {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #333;
+  width: 100%; 
+  height: 80px; 
+  margin-bottom: 0px;
+  padding: 10px; 
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  resize: none; 
+}
+
+#selectedSong::placeholder {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #a0a0a0;
+  opacity: 1;
+}
+
+#generatePlaylistBtn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  color: #fff;
+  background-color: #007BFF;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 10px; 
+  width: 100%; 
+}
+
+#generatePlaylistBtn:hover {
+  background-color: #0056b3;
+}
+
+#particles-js {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}

@@ -1,76 +1,100 @@
-
 // DOM Elements
-const searchInput = document.getElementById('songSearch');
-const searchResults = document.getElementById('searchResults');
-const likedSongs = document.getElementById('likedSongs');
-const recommendedSongs = document.getElementById('recommendedSongs');
+const searchInput = document.getElementById("songSearch");
+const searchResults = document.getElementById("searchResults");
+const selectedSongInput = document.getElementById("selectedSong");
+const generatePlaylistBtn = document.getElementById("generatePlaylistBtn");
+const generatedPlaylist = document.getElementById("generatedPlaylist");
 
-// Sample Data
-const allSongs = [
-  { title: 'QUÁ LÀ TRÔI', artist: 'Bùi Công Nam' },
-  { title: 'Lặng', artist: 'Rhymastic' },
-  { title: 'Chúa Tể', artist: 'Bùi Công Nam' },
-  { title: 'Thuận Nước Đẩy Thuyền', artist: 'S.T Sơn Thạch' },
-];
+// Search for Songs Dynamically
+function searchSongs() {
+  const query = searchInput.value.trim();
 
-const recommendedSongsList = [
-  { title: '12H03', artist: 'Cường Seven, Strong Trọng Hiếu' },
-  { title: 'IF', artist: 'Tăng Phúc' },
-  { title: 'RƠI', artist: 'S.T Sơn Thạch' },
-  { title: 'NÉT', artist: 'Soobin' },
-  { title: 'ĐỎ QUÊN ĐI', artist: 'Hà Lê' },
-];
+  if (!query) {
+    searchResults.innerHTML = "<li>Please enter a search term.</li>";
+    return;
+  }
 
-// Initialize Recommended Songs Dynamically
-function initRecommendedSongs() {
-  recommendedSongs.innerHTML = ''; // Clear the list first
-  recommendedSongsList.forEach(song => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span>${song.title}</span>
-      <span>${song.artist}</span>
-    `;
-    recommendedSongs.appendChild(li);
-  });
+  searchResults.innerHTML = "<li>Loading...</li>";
+
+  fetch("/search_song", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: query }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) {
+        searchResults.innerHTML = `<li>${data.error}</li>`;
+        return;
+      }
+
+      const results = data.songs || [];
+      if (results.length === 0) {
+        searchResults.innerHTML = "<li>No matching songs found.</li>";
+        return;
+      }
+
+      searchResults.innerHTML = "";
+      results.forEach((song) => {
+        const li = document.createElement("li");
+        li.textContent = `${song.title} - ${song.artist}`;
+        li.addEventListener("click", () => selectSong(song));
+        searchResults.appendChild(li);
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching search results:", error);
+      searchResults.innerHTML = "<li>Error fetching search results.</li>";
+    });
 }
 
-// Render Search Results Dynamically
-function renderSearchResults(query) {
-  searchResults.innerHTML = ''; // Clear previous results
-  const filteredSongs = allSongs.filter(song =>
-    song.title.toLowerCase().includes(query.toLowerCase())
-  );
-
-  filteredSongs.forEach(song => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span>${song.title}</span>
-      <span>${song.artist}</span>
-      <button class="like-btn">
-        <img src="https://img.icons8.com/ios/20/000000/like--v1.png" alt="Like">
-      </button>
-    `;
-    // Add like button functionality
-    li.querySelector('.like-btn').addEventListener('click', () => addToPlaylist(song));
-    searchResults.appendChild(li);
-  });
+// Select a Song from Search Results
+function selectSong(song) {
+  selectedSongInput.value = `${song.title} - ${song.artist}`;
 }
 
-// Add Song to Playlist
-function addToPlaylist(song) {
-  const li = document.createElement('li');
-  li.innerHTML = `
-    <span>${song.title}</span>
-    <span>${song.artist}</span>
-  `;
-  likedSongs.appendChild(li);
+// Generate Playlist Based on Selected Song
+function generatePlaylist() {
+  const selectedSong = selectedSongInput.value.trim();
+
+  if (!selectedSong) {
+    generatedPlaylist.innerHTML = "<li>Please paste a song to generate a playlist.</li>";
+    return;
+  }
+
+  generatedPlaylist.innerHTML = "<li>Loading...</li>";
+
+  fetch("/generate_playlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ song: selectedSong }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) {
+        generatedPlaylist.innerHTML = `<li>${data.error}</li>`;
+        return;
+      }
+
+      const playlist = data.playlist || [];
+      if (playlist.length === 0) {
+        generatedPlaylist.innerHTML = "<li>No songs found for this playlist.</li>";
+        return;
+      }
+
+      generatedPlaylist.innerHTML = "";
+      playlist.forEach((song) => {
+        const li = document.createElement("li");
+        li.textContent = `${song.title} - ${song.artist}`;
+        generatedPlaylist.appendChild(li);
+      });
+    })
+    .catch((error) => {
+      console.error("Error generating playlist:", error);
+      generatedPlaylist.innerHTML = "<li>Error generating playlist.</li>";
+    });
 }
 
 // Event Listeners
-document.getElementById('searchBtn').addEventListener('click', () => {
-  const query = searchInput.value.trim();
-  renderSearchResults(query);
-});
-
-// Initialize App
-initRecommendedSongs();
+document.getElementById("searchBtn").addEventListener("click", searchSongs);
+generatePlaylistBtn.addEventListener("click", generatePlaylist);
