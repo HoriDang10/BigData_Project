@@ -4,6 +4,7 @@ from pyspark.ml.feature import CountVectorizer, VectorAssembler, Tokenizer
 from pyspark.ml.linalg import SparseVector, DenseVector
 from pyspark.sql.types import ArrayType, DoubleType
 import numpy as np
+from pyspark.sql import functions as F
 
 # Start Spark session
 spark = SparkSession.builder \
@@ -32,6 +33,14 @@ for col_name in columns_to_check:
         print(f"Warning: Column {col_name} not found in dataset.")
         continue
     tracks = tracks.filter(col(col_name).isNotNull())
+                   
+# Filter out rows with non-numeric values
+for col_name in columns_to_check:
+    tracks = tracks.filter(F.col(col_name).rlike('^[+-]?\\d*(\\.\\d+)?([eE][+-]?\\d+)?$'))
+
+columns_to_cast = ['popularity', 'duration_ms', 'danceability', 'energy','key', 'loudness', 'mode', 'speechiness', 'acousticness','instrumentalness', 'liveness', 'valence', 'tempo', 'time_signature']
+for col_name in columns_to_cast:
+    tracks = tracks.withColumn(col_name, col(col_name).cast('float'))
 
 # Drop duplicate track names and order by popularity
 tracks = tracks.dropDuplicates(["track_name"])
@@ -82,3 +91,4 @@ try:
     print("Preprocessing completed. Data saved to 'preprocessed_tracks.parquet'.")
 except Exception as e:
     print(f"Error saving preprocessed data: {e}")
+    
