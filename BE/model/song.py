@@ -1,72 +1,64 @@
-
-# Import libraries 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit, udf, sum
-from pyspark.ml.feature import CountVectorizer, VectorAssembler, Tokenizer
-from pyspark.ml.linalg import DenseVector, SparseVector
+from pyspark.sql.functions import col, lit, udf
 from pyspark.sql.types import ArrayType, DoubleType
+from pyspark.ml.linalg import DenseVector
 import numpy as np
-from pyspark.sql import functions as F
-
-# Start a Spark session
-spark = SparkSession.builder \
-    .appName("SongRecommendation") \
-    .config("spark.driver.bindAddress", "127.0.0.1") \
-    .config("spark.driver.host", "localhost") \
-    .config("spark.driver.port", "4041") \
-    .getOrCreate()
-    
-# Preprocessing 
-tracks = spark.read.parquet("preprocessed_tracks.parquet")
 
 # Define cosine similarity function
-def cosine_similarity_list(vec1, vec2):
+def cosine_similarity(vec1, vec2):
+    if not vec1 or not vec2:  # Check for None or empty vectors
+        return 0.0
     vec1 = np.array(vec1, dtype=float)
     vec2 = np.array(vec2, dtype=float)
-    dot_product = float(np.dot(vec1, vec2))
-    norm1 = float(np.linalg.norm(vec1))
-    norm2 = float(np.linalg.norm(vec2))
-    return dot_product / (norm1 * norm2)
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    return float(dot_product / (norm1 * norm2)) if norm1 > 0 and norm2 > 0 else 0.0
 
+# UDF for similarity calculation
+def recommend_songs(song_name, tracks):
+    try:
+        print(f"Searching for song: {song_name}")
 
-cosine_similarity_udf = udf(cosine_similarity_list, DoubleType())
+        # Find input song features
+        input_song = tracks.filter(col("track_name") == song_name).select("features_list").collect()
+        if not input_song:
+            print(f"No exact match found for: {song_name}")
+            return []
 
-# Recommend function
-def recommend_songs(song_name):
-    global tracks  
-    input_song = tracks.filter(col("track_name") == song_name).select("features_list", "artists").collect()
+        # Extract input features
+        input_features = input_song[0]["features_list"]
 
-    if not input_song:
-        print("This song is either not so popular or you entered an invalid name.\nSome songs you may like:")
-        tracks.select("track_name").orderBy(col("popularity").desc()).show(5)
-        return
+        # Broadcast input features
+        broadcast_features = tracks._sc.broadcast(input_features)
 
-    input_features = input_song[0]["features_list"]
-    input_artist = input_song[0]["artists"]
+        # Define UDF
+        @udf(DoubleType())
+        def similarity_udf(features_list):
+            return cosine_similarity(broadcast_features.value, features_list)
 
-    artist_tracks = tracks.filter(col("artists") == input_artist)
+        # Calculate similarity
+        tracks_with_similarity = tracks.withColumn(
+            "similarity", similarity_udf(col("features_list"))
+        )
 
-   
-    if artist_tracks.count() == 0:
-        print(f"No other songs by {input_artist} found, recommending based on features.")
-        artist_tracks = tracks  
+        # Get top recommendations
+        recommendations = tracks_with_similarity.filter(
+            col("track_name") != song_name
+        ).orderBy(
+            col("similarity").desc(),
+            col("popularity").desc()
+        ).select("track_name", "artists", "similarity").limit(10).collect()
 
-    
-    tracks_with_similarity = tracks.withColumn(
-        "similarity", cosine_similarity_udf(lit(input_features), col("features_list"))
-    )
+        print("Recommendations:")
+        for row in recommendations:
+            print(f"Track: {row.track_name}, Artist: {row.artists}, Similarity: {row.similarity}")
 
-    
-    recommendations = tracks_with_similarity.filter(
-        col("track_name") != song_name  
-    ).orderBy(
-        (col("artists") == input_artist).desc(),  
-        col("similarity").desc(),  
-        col("popularity").desc()  
-    )
+        return [{"title": row.track_name, "artist": row.artists} for row in recommendations]
+    except Exception as e:
+        print(f"Error in recommend_songs: {e}")
+        return []
 
-    
-    recommendations.select("track_name", "artists").show(10)
 
 # Recommend songs based on popularity
 def recommend_songs_by_popularity():
